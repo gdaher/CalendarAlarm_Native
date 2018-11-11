@@ -31,9 +31,18 @@ const instructions = Platform.select({
 //REQUEST PERMISSION TO USE PUSH NOTIFICATIONS
 PushNotificationIOS.requestPermissions();
 
-// //ADD EVENT LISTENER CALLBACK FOR WHEN NOTIFICATION IS DELIVERED- this doesn't work unless the application is running. Could potentially be used to cancel notifications.
-// PushNotificationIOS.addEventListener("localNotification", eventCallback);
-// let alerts = 0;
+stop = () => {
+  console.log("reminders should stop");
+  PushNotificationIOS.getDeliveredNotifications(notifications => {
+    const ids = notifications.map(elem => elem.identifier);
+    PushNotificationIOS.removeDeliveredNotifications([...ids.slice(1)]);
+    if (notifications.length > 0) {
+      PushNotificationIOS.cancelLocalNotifications(notifications[0].userInfo);
+    }
+  });
+};
+//ADD EVENT LISTENER CALLBACK FOR WHEN NOTIFICATION IS DELIVERED- this doesn't work unless the application is running. Could potentially be used to cancel notifications.
+PushNotificationIOS.addEventListener("localNotification", stop);
 
 //initialize data local data store for our app to an object, if nothing has been stored yer
 if (!_retrieveData()) {
@@ -57,16 +66,7 @@ export default class App extends Component<Props> {
       AmPm: "AM"
     };
   }
-  stop = () => {
-    console.log("reminders should stop");
-    PushNotificationIOS.getDeliveredNotifications(notifications => {
-      const ids = notifications.map(elem => elem.identifier);
-      PushNotificationIOS.removeDeliveredNotifications([...ids.slice(1)]);
-      if (notifications.length > 0) {
-        PushNotificationIOS.cancelLocalNotifications(notifications[0].userInfo);
-      }
-    });
-  };
+
   submit = async () => {
     //convert to military time
     let militaryHour = this.state.hour;
@@ -258,7 +258,6 @@ export default class App extends Component<Props> {
           </Picker>
         </View>
         <Button onPress={this.submit} title="Remind Me" color="#841584" />
-        <Button onPress={this.stop} title="Stop Reminding Me" color="#841584" />
       </View>
     );
   }
