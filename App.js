@@ -19,7 +19,6 @@ import {
   AsyncStorage,
   Button
 } from "react-native";
-import { Calendar, CalendarList, Agenda } from "react-native-calendars";
 
 // import BackgroundTask from "react-native-background-task";
 // import queueFactory from "react-native-queue";

@@ -8,14 +8,7 @@
   },
   "dependencies": {
     "react": "16.6.0-alpha.8af6728",
-    "react-native": "0.57.4",
-    "react-native-alarm": "^1.2.0",
-    "react-native-background-fetch": "2.0.x",
-    "react-native-background-task": "^0.2.1",
-    "react-native-calendars": "^1.21.0",
-    "react-native-local-notifications": "^1.1.0",
-    "react-native-push-notification": "^3.1.2",
-    "react-native-queue": "^1.2.1"
+    "react-native": "0.57.4"
   },
   "devDependencies": {
     "babel-jest": "23.6.0",
