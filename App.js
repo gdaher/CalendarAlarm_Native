@@ -93,16 +93,16 @@ export default class App extends Component<Props> {
       AmPm: "AM"
     };
   }
-  componentWillMount() {
+  stop = () => {
     PushNotificationIOS.getDeliveredNotifications(notifications => {
       const ids = notifications.map(elem => elem.identifier);
       PushNotificationIOS.removeDeliveredNotifications([...ids.slice(1)]);
-      console.log(notifications);
+      console.log("notifications will mount", notifications);
       if (notifications.length > 0) {
         PushNotificationIOS.cancelLocalNotifications(notifications[0].userInfo);
       }
     });
-  }
+  };
   submit = async () => {
     PushNotificationIOS.scheduleLocalNotification({
       fireDate: Date.now() + 60000,
@@ -290,6 +290,7 @@ export default class App extends Component<Props> {
           </Picker>
         </View>
         <Button onPress={this.submit} title="Remind Me" color="#841584" />
+        <Button onPress={this.stop} title="Stop Reminding Me" color="#841584" />
       </View>
     );
   }
