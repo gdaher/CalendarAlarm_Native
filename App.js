@@ -19,9 +19,7 @@ import {
   AsyncStorage,
   Button
 } from "react-native";
-
-// import BackgroundTask from "react-native-background-task";
-// import queueFactory from "react-native-queue";
+import { _storeData, _retrieveData, formatHourMinute } from "./Functions";
 
 const instructions = Platform.select({
   ios: "Press Cmd+R to reload,\n" + "Cmd+D or shake for dev menu",
@@ -33,47 +31,14 @@ const instructions = Platform.select({
 //REQUEST PERMISSION TO USE PUSH NOTIFICATIONS
 PushNotificationIOS.requestPermissions();
 
-// //ADD EVENT LISTENER CALLBACK FOR WHEN NOTIFICATION IS DELIVERED- this doesn't work unless the applicaiton is running.
+// //ADD EVENT LISTENER CALLBACK FOR WHEN NOTIFICATION IS DELIVERED- this doesn't work unless the application is running. Could potentially be used to cancel notifications.
 // PushNotificationIOS.addEventListener("localNotification", eventCallback);
 // let alerts = 0;
 
-const userInfo2 = { alert: "alert2" };
-
-//CANCEL FIRST NOTIFICATION
-
-// while (alerts < 10) {
-//   setTimeout(() => {
-//     PushNotificationIOS.presentLocalNotification({
-//       alertBody: "hello I am alertBody"
-//     });
-//     alerts++;
-//   }, interval);
-// }
-
-_storeData = async data => {
-  try {
-    await AsyncStorage.setItem("CalendarAlarm", data);
-    console.log("store data was run");
-  } catch (error) {
-    // Error saving data
-  }
-};
-
-_retrieveData = async key => {
-  try {
-    console.log("inside retrieve data");
-    const value = await AsyncStorage.getItem(key);
-    if (value !== null) {
-      // We have data!!
-      console.log("data", value);
-      return value;
-    }
-  } catch (error) {
-    // Error retrieving data
-  }
-};
-
-_storeData("{}");
+//initialize data local data store for our app to an object, if nothing has been stored yer
+if (!_retrieveData()) {
+  _storeData("{}");
+}
 
 type Props = {};
 export default class App extends Component<Props> {
@@ -83,51 +48,62 @@ export default class App extends Component<Props> {
     //I had to put month/day/year etc. directly onto state in stead of an object. If you put them
     //inside a larger object, you cannot change a picker without the others resetting.
     this.state = {
-      title: "",
+      title: "An event",
       month: "1",
       day: "1",
       year: "2017",
-      hour: "1",
-      minute: "0",
+      hour: "01",
+      minute: "00",
       AmPm: "AM"
     };
   }
   stop = () => {
+    console.log("reminders should stop");
     PushNotificationIOS.getDeliveredNotifications(notifications => {
       const ids = notifications.map(elem => elem.identifier);
       PushNotificationIOS.removeDeliveredNotifications([...ids.slice(1)]);
-      console.log("notifications will mount", notifications);
       if (notifications.length > 0) {
         PushNotificationIOS.cancelLocalNotifications(notifications[0].userInfo);
       }
     });
   };
   submit = async () => {
-    PushNotificationIOS.scheduleLocalNotification({
-      fireDate: Date.now() + 60000,
-      alertBody: "hello I am alertBody #2",
-      repeatInterval: "minute",
-      userInfo: userInfo2
-    });
-    let data = await _retrieveData("CalendarAlarm");
-    // prettier-ignore
-    const key = `${this.state.month}-${this.state.day}-${this.state.year}-${this.state.hour}-${this.state.minute}}`;
+    //convert to military time
+    let militaryHour = this.state.hour;
 
+    if (this.state.AmPm === "PM") {
+      const numHour = parseInt(this.state.hour) + 12;
+      militaryHour = numHour.toString();
+    }
+
+    //make key
+    // prettier-ignore
+    const key = `${this.state.year}-${this.state.month}-${this.state.day}T${militaryHour}:${this.state.minute}:00`;
+
+    //schedule a notification
+    PushNotificationIOS.scheduleLocalNotification({
+      fireDate: new Date(key),
+      alertBody: this.state.title,
+      repeatInterval: "minute",
+      userInfo: this.state
+    });
+
+    //make object to and add it to the CalendarAlarm object in AsyncStorage
+
+    const data = await _retrieveData();
+    //parse retreieved string data into JSON
     const dataSubmission = JSON.parse(data);
     dataSubmission[key] = this.state;
-    console.log("dataSubmission", dataSubmission);
+    //convert back to string so you can add the updated version to AsyncStorage
     const stringDataSubmission = JSON.stringify(dataSubmission);
     await _storeData(stringDataSubmission);
-    let val = await _retrieveData("CalendarAlarm");
-    //SCHEDULE  SECOND NOTIFICATION TO REPEAT
+    //check if data were added
+    let val = await _retrieveData();
+    console.log("updated notifications inside submit", val);
   };
+
   render() {
     return (
-      // <View style={styles.container}>
-      //   <Text style={styles.welcome}>Welcome to React Native!</Text>
-      //   <Text style={styles.instructions}>To get started, edit App.js</Text>
-      //   <Text style={styles.instructions}>{instructions}</Text>
-      // </View>
       <View style={styles.container}>
         <View style={styles.picker} key={1}>
           <Text>Title:</Text>
@@ -137,6 +113,10 @@ export default class App extends Component<Props> {
               width: 200,
               borderColor: "gray",
               borderWidth: 1
+            }}
+            placeholder="An event"
+            onChangeText={(itemValue, itemIndex) => {
+              this.setState({ title: itemValue });
             }}
           />
         </View>
@@ -148,8 +128,7 @@ export default class App extends Component<Props> {
             style={{
               height: 100,
               width: 50,
-              padding: 5,
-              margins: 0
+              padding: 5
             }}
             onValueChange={(itemValue, itemIndex) =>
               this.setState({ month: itemValue })
@@ -177,8 +156,7 @@ export default class App extends Component<Props> {
             style={{
               height: 100,
               width: 50,
-              padding: 5,
-              margins: 0
+              padding: 5
             }}
             onValueChange={(itemValue, itemIndex) =>
               this.setState({ day: itemValue })
@@ -200,8 +178,7 @@ export default class App extends Component<Props> {
             style={{
               height: 100,
               width: 80,
-              padding: 5,
-              margins: 0
+              padding: 5
             }}
             onValueChange={(itemValue, itemIndex) =>
               this.setState({ year: itemValue })
@@ -223,8 +200,7 @@ export default class App extends Component<Props> {
             style={{
               height: 100,
               width: 80,
-              padding: 5,
-              margins: 0
+              padding: 5
             }}
             onValueChange={(itemValue, itemIndex) => {
               this.setState({ hour: itemValue + "" });
@@ -234,6 +210,7 @@ export default class App extends Component<Props> {
               .fill()
               .map((elem, idx) => idx + 1)
               .map(number => {
+                number = formatHourMinute(number.toString());
                 return (
                   <Picker.Item
                     key={number}
@@ -250,25 +227,18 @@ export default class App extends Component<Props> {
             style={{
               height: 100,
               width: 80,
-              padding: 5,
-              margins: 0
+              padding: 5
             }}
             onValueChange={(itemValue, itemIndex) => {
               this.setState({ minute: itemValue });
-              console.log(
-                "minutes",
-                this.state.minute,
-                "itemValue",
-                itemValue,
-                this.state.AmPm
-              );
             }}
           >
             {Array(12)
               .fill()
               .map((elem, idx) => idx * 5)
               .map(number => {
-                return <Picker.Item label={"" + number} value={"" + number} />;
+                number = formatHourMinute(number.toString());
+                return <Picker.Item label={number} value={number} />;
               })}
           </Picker>
           <Picker
@@ -277,8 +247,7 @@ export default class App extends Component<Props> {
             style={{
               height: 100,
               width: 80,
-              padding: 5,
-              margins: 0
+              padding: 5
             }}
             onValueChange={(itemValue, itemIndex) => {
               this.setState({ AmPm: itemValue });
