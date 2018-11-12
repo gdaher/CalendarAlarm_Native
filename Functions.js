@@ -24,7 +24,6 @@ export const _retrieveData = async () => {
     const value = await AsyncStorage.getItem("CalendarAlarm");
     if (value !== null) {
       // We have data!!
-      console.log("data", value);
       return JSON.parse(value);
     }
   } catch (error) {

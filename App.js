@@ -89,7 +89,6 @@ export default class App extends Component<Props> {
     //make key
     // prettier-ignore
     const key = `${this.state.year}-${this.state.month}-${this.state.day}T${militaryHour}:${this.state.minute}:00`;
-    console.log("key type", typeof key);
     //schedule a notification
     PushNotificationIOS.scheduleLocalNotification({
       fireDate: new Date(key),
@@ -101,16 +100,11 @@ export default class App extends Component<Props> {
     //make object to and add it to the CalendarAlarm object in AsyncStorage
     let data = await _retrieveData();
     //parse retreieved string data into JSON
-    console.log(key, "this is key", "typeof data", typeof data, data);
 
     data[key] = this.state;
-    console.log("data before store data", data, this.state);
     //convert back to string so you can add the updated version to AsyncStorage
     await _storeData(data);
-    console.log("ater storing data");
     //check if data were added
-    // let val = await _retrieveData();
-    // console.log("updated notifications inside submit", val);
     this.replenishList();
   };
 
