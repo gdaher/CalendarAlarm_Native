@@ -17,9 +17,16 @@ import {
   TextInput,
   Picker,
   AsyncStorage,
-  Button
+  Button,
+  ScrollView
 } from "react-native";
-import { _storeData, _retrieveData, formatHourMinute } from "./Functions";
+import {
+  _storeData,
+  _retrieveData,
+  stopNotification,
+  formatHourMinute
+} from "./Functions";
+import ListView from "./components/ListView";
 
 const instructions = Platform.select({
   ios: "Press Cmd+R to reload,\n" + "Cmd+D or shake for dev menu",
@@ -31,18 +38,8 @@ const instructions = Platform.select({
 //REQUEST PERMISSION TO USE PUSH NOTIFICATIONS
 PushNotificationIOS.requestPermissions();
 
-stop = () => {
-  console.log("reminders should stop");
-  PushNotificationIOS.getDeliveredNotifications(notifications => {
-    const ids = notifications.map(elem => elem.identifier);
-    PushNotificationIOS.removeDeliveredNotifications([...ids.slice(1)]);
-    if (notifications.length > 0) {
-      PushNotificationIOS.cancelLocalNotifications(notifications[0].userInfo);
-    }
-  });
-};
 //ADD EVENT LISTENER CALLBACK FOR WHEN NOTIFICATION IS DELIVERED- this doesn't work unless the application is running. Could potentially be used to cancel notifications.
-PushNotificationIOS.addEventListener("localNotification", stop);
+PushNotificationIOS.addEventListener("localNotification", stopNotification);
 
 //initialize data local data store for our app to an object, if nothing has been stored yer
 if (!_retrieveData()) {
@@ -58,16 +55,29 @@ export default class App extends Component<Props> {
     //inside a larger object, you cannot change a picker without the others resetting.
     this.state = {
       title: "An event",
-      month: "1",
-      day: "1",
+      month: "01",
+      day: "01",
       year: "2017",
       hour: "01",
       minute: "00",
-      AmPm: "AM"
+      AmPm: "AM",
+      events: {}
     };
+    this.replenishList = this.replenishList.bind(this);
   }
+  replenishList = async () => {
+    const data = await _retrieveData();
+    this.setState({
+      events: data
+    });
+  };
 
+  componentDidMount() {
+    this.replenishList();
+  }
   submit = async () => {
+    //replenish list view
+
     //convert to military time
     let militaryHour = this.state.hour;
 
@@ -79,7 +89,7 @@ export default class App extends Component<Props> {
     //make key
     // prettier-ignore
     const key = `${this.state.year}-${this.state.month}-${this.state.day}T${militaryHour}:${this.state.minute}:00`;
-
+    console.log("key type", typeof key);
     //schedule a notification
     PushNotificationIOS.scheduleLocalNotification({
       fireDate: new Date(key),
@@ -89,176 +99,201 @@ export default class App extends Component<Props> {
     });
 
     //make object to and add it to the CalendarAlarm object in AsyncStorage
-
-    const data = await _retrieveData();
+    let data = await _retrieveData();
     //parse retreieved string data into JSON
-    const dataSubmission = JSON.parse(data);
-    dataSubmission[key] = this.state;
+    console.log(key, "this is key", "typeof data", typeof data, data);
+
+    data[key] = this.state;
+    console.log("data before store data", data, this.state);
     //convert back to string so you can add the updated version to AsyncStorage
-    const stringDataSubmission = JSON.stringify(dataSubmission);
-    await _storeData(stringDataSubmission);
+    await _storeData(data);
+    console.log("ater storing data");
     //check if data were added
-    let val = await _retrieveData();
-    console.log("updated notifications inside submit", val);
+    // let val = await _retrieveData();
+    // console.log("updated notifications inside submit", val);
+    this.replenishList();
   };
 
   render() {
     return (
-      <View style={styles.container}>
-        <View style={styles.picker} key={1}>
-          <Text>Title:</Text>
-          <TextInput
-            style={{
-              height: 50,
-              width: 200,
-              borderColor: "gray",
-              borderWidth: 1
-            }}
-            placeholder="An event"
-            onChangeText={(itemValue, itemIndex) => {
-              this.setState({ title: itemValue });
-            }}
+      <ScrollView>
+        <View style={styles.container}>
+          <View style={styles.picker} key={1}>
+            <Text>Title:</Text>
+            <TextInput
+              style={{
+                height: 50,
+                width: 200,
+                borderColor: "white",
+                borderWidth: 1
+              }}
+              placeholder="An event"
+              onChangeText={(itemValue, itemIndex) => {
+                this.setState({ title: itemValue });
+              }}
+            />
+          </View>
+          <View style={styles.picker} key={2}>
+            <Text>Month:</Text>
+            <Picker
+              selectedValue={this.state.month}
+              itemStyle={{ height: 100, width: 50 }}
+              style={{
+                height: 100,
+                width: 50,
+                padding: 5
+              }}
+              onValueChange={(itemValue, itemIndex) =>
+                this.setState({ month: itemValue })
+              }
+            >
+              {Array(12)
+                .fill()
+                .map((elem, idx) => idx + 1)
+                .map(number => {
+                  number = formatHourMinute(number.toString());
+                  return (
+                    <Picker.Item
+                      key={number}
+                      label={"" + number}
+                      value={"" + number}
+                    />
+                  );
+                })}
+            </Picker>
+          </View>
+          <View style={styles.picker} key={3}>
+            <Text>Day:</Text>
+            <Picker
+              selectedValue={this.state.day}
+              itemStyle={{ height: 100, width: 50 }}
+              style={{
+                height: 100,
+                width: 50,
+                padding: 5
+              }}
+              onValueChange={(itemValue, itemIndex) =>
+                this.setState({ day: itemValue })
+              }
+            >
+              {Array(31)
+                .fill()
+                .map((elem, idx) => idx + 1)
+                .map(number => {
+                  number = formatHourMinute(number.toString());
+                  return (
+                    <Picker.Item
+                      key={number}
+                      label={"" + number}
+                      value={"" + number}
+                    />
+                  );
+                })}
+            </Picker>
+          </View>
+          <View style={styles.picker} key={4}>
+            <Text> Year: </Text>
+            <Picker
+              selectedValue={this.state.year}
+              itemStyle={{ height: 100, width: 80 }}
+              style={{
+                height: 100,
+                width: 80,
+                padding: 5
+              }}
+              onValueChange={(itemValue, itemIndex) =>
+                this.setState({ year: itemValue })
+              }
+            >
+              {Array(30)
+                .fill(new Date().getFullYear() - 1)
+                .map((elem, idx) => idx + elem)
+                .map(number => {
+                  return (
+                    <Picker.Item
+                      key={number}
+                      label={"" + number}
+                      value={"" + number}
+                    />
+                  );
+                })}
+            </Picker>
+          </View>
+          <View style={styles.picker} key={5}>
+            <Text> Time: </Text>
+            <Picker
+              selectedValue={this.state.hour}
+              itemStyle={{ height: 100, width: 80 }}
+              style={{
+                height: 100,
+                width: 80,
+                padding: 5
+              }}
+              onValueChange={(itemValue, itemIndex) => {
+                this.setState({ hour: itemValue + "" });
+              }}
+            >
+              {Array(12)
+                .fill()
+                .map((elem, idx) => idx + 1)
+                .map(number => {
+                  number = formatHourMinute(number.toString());
+                  return (
+                    <Picker.Item
+                      key={number}
+                      label={"" + number}
+                      value={"" + number}
+                    />
+                  );
+                })}
+            </Picker>
+            <Text> : </Text>
+            <Picker
+              selectedValue={this.state.minute}
+              itemStyle={{ height: 100, width: 80 }}
+              style={{
+                height: 100,
+                width: 80,
+                padding: 5
+              }}
+              onValueChange={(itemValue, itemIndex) => {
+                this.setState({ minute: itemValue });
+              }}
+            >
+              {Array(12)
+                .fill()
+                .map((elem, idx) => idx * 5)
+                .map(number => {
+                  number = formatHourMinute(number.toString());
+                  return (
+                    <Picker.Item key={number} label={number} value={number} />
+                  );
+                })}
+            </Picker>
+            <Picker
+              selectedValue={this.state.AmPm}
+              itemStyle={{ height: 100, width: 80 }}
+              style={{
+                height: 100,
+                width: 80,
+                padding: 5
+              }}
+              onValueChange={(itemValue, itemIndex) => {
+                this.setState({ AmPm: itemValue });
+              }}
+            >
+              <Picker.Item label="AM" value="AM" />
+              <Picker.Item label="PM" value="PM" />
+            </Picker>
+          </View>
+          <Button onPress={this.submit} title="Remind Me" color="#841584" />
+
+          <ListView
+            events={this.state.events}
+            replenishList={this.replenishList}
           />
         </View>
-        <View style={styles.picker} key={2}>
-          <Text>Month:</Text>
-          <Picker
-            selectedValue={this.state.month}
-            itemStyle={{ height: 100, width: 50 }}
-            style={{
-              height: 100,
-              width: 50,
-              padding: 5
-            }}
-            onValueChange={(itemValue, itemIndex) =>
-              this.setState({ month: itemValue })
-            }
-          >
-            {Array(12)
-              .fill()
-              .map((elem, idx) => idx + 1)
-              .map(number => {
-                return (
-                  <Picker.Item
-                    key={number}
-                    label={"" + number}
-                    value={"" + number}
-                  />
-                );
-              })}
-          </Picker>
-        </View>
-        <View style={styles.picker} key={3}>
-          <Text>Day:</Text>
-          <Picker
-            selectedValue={this.state.day}
-            itemStyle={{ height: 100, width: 50 }}
-            style={{
-              height: 100,
-              width: 50,
-              padding: 5
-            }}
-            onValueChange={(itemValue, itemIndex) =>
-              this.setState({ day: itemValue })
-            }
-          >
-            {Array(31)
-              .fill()
-              .map((elem, idx) => idx + 1)
-              .map(number => {
-                return <Picker.Item label={"" + number} value={"" + number} />;
-              })}
-          </Picker>
-        </View>
-        <View style={styles.picker} key={4}>
-          <Text> Year: </Text>
-          <Picker
-            selectedValue={this.state.year}
-            itemStyle={{ height: 100, width: 80 }}
-            style={{
-              height: 100,
-              width: 80,
-              padding: 5
-            }}
-            onValueChange={(itemValue, itemIndex) =>
-              this.setState({ year: itemValue })
-            }
-          >
-            {Array(30)
-              .fill(new Date().getFullYear() - 1)
-              .map((elem, idx) => idx + elem)
-              .map(number => {
-                return <Picker.Item label={"" + number} value={"" + number} />;
-              })}
-          </Picker>
-        </View>
-        <View style={styles.picker} key={5}>
-          <Text> Time: </Text>
-          <Picker
-            selectedValue={this.state.hour}
-            itemStyle={{ height: 100, width: 80 }}
-            style={{
-              height: 100,
-              width: 80,
-              padding: 5
-            }}
-            onValueChange={(itemValue, itemIndex) => {
-              this.setState({ hour: itemValue + "" });
-            }}
-          >
-            {Array(12)
-              .fill()
-              .map((elem, idx) => idx + 1)
-              .map(number => {
-                number = formatHourMinute(number.toString());
-                return (
-                  <Picker.Item
-                    key={number}
-                    label={"" + number}
-                    value={"" + number}
-                  />
-                );
-              })}
-          </Picker>
-          <Text> : </Text>
-          <Picker
-            selectedValue={this.state.minute}
-            itemStyle={{ height: 100, width: 80 }}
-            style={{
-              height: 100,
-              width: 80,
-              padding: 5
-            }}
-            onValueChange={(itemValue, itemIndex) => {
-              this.setState({ minute: itemValue });
-            }}
-          >
-            {Array(12)
-              .fill()
-              .map((elem, idx) => idx * 5)
-              .map(number => {
-                number = formatHourMinute(number.toString());
-                return <Picker.Item label={number} value={number} />;
-              })}
-          </Picker>
-          <Picker
-            selectedValue={this.state.AmPm}
-            itemStyle={{ height: 100, width: 80 }}
-            style={{
-              height: 100,
-              width: 80,
-              padding: 5
-            }}
-            onValueChange={(itemValue, itemIndex) => {
-              this.setState({ AmPm: itemValue });
-            }}
-          >
-            <Picker.Item label="AM" value="AM" />
-            <Picker.Item label="PM" value="PM" />
-          </Picker>
-        </View>
-        <Button onPress={this.submit} title="Remind Me" color="#841584" />
-      </View>
+      </ScrollView>
     );
   }
 }
@@ -267,8 +302,7 @@ const styles = StyleSheet.create({
   container: {
     display: "flex",
     flexDirection: "column",
-    backgroundColor: "#F5FCFF",
-    padding: 20
+    margin: 20
   },
   picker: {
     display: "flex",
@@ -287,3 +321,5 @@ const styles = StyleSheet.create({
     marginBottom: 5
   }
 });
+
+export { PushNotificationIOS };
