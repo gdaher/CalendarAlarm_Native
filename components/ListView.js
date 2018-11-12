@@ -25,8 +25,9 @@ const ListView = props => {
               }}
             >
               {/*prettier-ignore*/}
-              <Text>{`${elem.title}:${elem.month}/${elem.day}/${elem.year}@${elem.hour}:${elem.minute}`}</Text>
+              <Text style={{flexBasis: 200}}>{`${elem.title}:${elem.month}/${elem.day}/${elem.year}@${elem.hour}:${elem.minute} ${elem.AmPm}`}</Text>
               <Button
+                style={{ flexBasis: 10 }}
                 onPress={async () => {
                   await deleteNotification(key, elem);
                   props.replenishList();
