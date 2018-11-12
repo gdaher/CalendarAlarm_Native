@@ -3,18 +3,17 @@ import {
   StyleSheet,
   Text,
   View,
-  PushNotificationIOS,
   TouchableOpacity,
   TextInput,
   Picker,
   AsyncStorage,
   Button
 } from "react-native";
-
+import { PushNotificationIOS } from "./App";
 export const _storeData = async data => {
   try {
+    data = JSON.stringify(data);
     await AsyncStorage.setItem("CalendarAlarm", data);
-    console.log("store data was run");
   } catch (error) {
     // Error saving data
   }
@@ -22,12 +21,11 @@ export const _storeData = async data => {
 
 export const _retrieveData = async () => {
   try {
-    console.log("inside retrieve data");
     const value = await AsyncStorage.getItem("CalendarAlarm");
     if (value !== null) {
       // We have data!!
       console.log("data", value);
-      return value;
+      return JSON.parse(value);
     }
   } catch (error) {
     // Error retrieving data
@@ -38,4 +36,21 @@ export const formatHourMinute = number => {
     return "0" + number;
   }
   return number;
+};
+
+export const stopNotification = clickedNotification => {
+  PushNotificationIOS.getDeliveredNotifications(notifications => {
+    const ids = notifications.map(elem => elem.identifier);
+    PushNotificationIOS.removeDeliveredNotifications([...ids.slice(1)]);
+    PushNotificationIOS.cancelLocalNotifications(clickedNotification._data);
+  });
+};
+
+export const deleteNotification = async (key, value) => {
+  PushNotificationIOS.cancelLocalNotifications(value);
+  try {
+    const data = await _retrieveData();
+    delete data[key];
+    await _storeData(data);
+  } catch (err) {}
 };
