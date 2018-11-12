@@ -57,7 +57,7 @@ export default class App extends Component<Props> {
       title: "An event",
       month: "01",
       day: "01",
-      year: "2017",
+      year: "2018",
       hour: "01",
       minute: "00",
       AmPm: "AM",
@@ -65,6 +65,7 @@ export default class App extends Component<Props> {
     };
     this.replenishList = this.replenishList.bind(this);
   }
+
   replenishList = async () => {
     const data = await _retrieveData();
     this.setState({
@@ -113,13 +114,14 @@ export default class App extends Component<Props> {
       <ScrollView>
         <View style={styles.container}>
           <View style={styles.picker} key={1}>
-            <Text>Title:</Text>
+            <Text style={{ flexBasis: 60 }}>Title:</Text>
             <TextInput
               style={{
                 height: 50,
                 width: 200,
                 borderColor: "white",
-                borderWidth: 1
+                borderWidth: 1,
+                flexBasis: 250
               }}
               placeholder="An event"
               onChangeText={(itemValue, itemIndex) => {
@@ -128,7 +130,7 @@ export default class App extends Component<Props> {
             />
           </View>
           <View style={styles.picker} key={2}>
-            <Text>Month:</Text>
+            <Text style={{ flexBasis: 60 }}>Month:</Text>
             <Picker
               selectedValue={this.state.month}
               itemStyle={{ height: 100, width: 50 }}
@@ -157,7 +159,7 @@ export default class App extends Component<Props> {
             </Picker>
           </View>
           <View style={styles.picker} key={3}>
-            <Text>Day:</Text>
+            <Text style={{ flexBasis: 60 }}>Day:</Text>
             <Picker
               selectedValue={this.state.day}
               itemStyle={{ height: 100, width: 50 }}
@@ -186,7 +188,7 @@ export default class App extends Component<Props> {
             </Picker>
           </View>
           <View style={styles.picker} key={4}>
-            <Text> Year: </Text>
+            <Text style={{ flexBasis: 60 }}> Year: </Text>
             <Picker
               selectedValue={this.state.year}
               itemStyle={{ height: 100, width: 80 }}
@@ -200,7 +202,7 @@ export default class App extends Component<Props> {
               }
             >
               {Array(30)
-                .fill(new Date().getFullYear() - 1)
+                .fill(new Date().getFullYear())
                 .map((elem, idx) => idx + elem)
                 .map(number => {
                   return (
@@ -214,7 +216,7 @@ export default class App extends Component<Props> {
             </Picker>
           </View>
           <View style={styles.picker} key={5}>
-            <Text> Time: </Text>
+            <Text style={{ flexBasis: 60 }}> Time: </Text>
             <Picker
               selectedValue={this.state.hour}
               itemStyle={{ height: 100, width: 80 }}
@@ -241,7 +243,7 @@ export default class App extends Component<Props> {
                   );
                 })}
             </Picker>
-            <Text> : </Text>
+            <Text style={{ flexBasis: 60 }}> : </Text>
             <Picker
               selectedValue={this.state.minute}
               itemStyle={{ height: 100, width: 80 }}
